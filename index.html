@@ -19,7 +19,7 @@
         .modal-content::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
         .modal-content::-webkit-scrollbar-thumb:hover { background: #555; }
         .details-container { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
-        .details-container.open { max-height: 2000px; /* Increased max-height */ }
+        .details-container.open { max-height: 2000px; }
         .chevron { transition: transform 0.3s ease; }
         .open .chevron { transform: rotate(180deg); }
         .tag { display: inline-flex; align-items-center; padding: 4px 8px; margin: 2px; background-color: #e0f2fe; color: #0369a1; border-radius: 9999px; font-size: 0.875rem; }
@@ -173,7 +173,7 @@
                      <div class="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-100">
                         <div class="flex justify-between items-center">
                              <h3 class="text-lg font-semibold text-gray-900">Manajemen Bidang</h3>
-                             <button onclick="openSubcommitteeModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm">+ Buat Bidang</button>
+                             <button onclick="openBatchSubcommitteeModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm">+ Buat Bidang</button>
                         </div>
                     </div>
 
@@ -307,37 +307,25 @@
             </form>
         </div>
     </div>
-    <!-- New Subcommittee Modal -->
-    <div id="subcommitteeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 flex flex-col">
+    <!-- Batch Subcommittee Modal -->
+    <div id="subcommitteeBatchModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl mx-4 flex flex-col" style="height: 90vh;">
             <div class="p-6 border-b">
-                <h2 class="text-xl font-bold text-gray-800">Buat Bidang Baru</h2>
+                 <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gray-800">Buat Bidang Baru</h2>
+                    <button onclick="closeBatchSubcommitteeModal()" class="text-gray-500 hover:text-gray-800">&times;</button>
+                </div>
             </div>
-            <form id="createSubcommitteeForm">
-                <div class="p-6 modal-content overflow-y-auto space-y-4">
-                    <div>
-                        <label for="subcommitteeNameModal" class="block text-sm font-medium text-gray-700 mb-1">Nama Bidang</label>
-                        <input type="text" id="subcommitteeNameModal" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Contoh: Bidang Konsumsi">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Ketua Bidang</label>
-                        <div class="relative">
-                            <div id="subcommitteeChairContainer" class="w-full border border-gray-300 rounded-lg px-2 py-1 bg-white flex items-center min-h-[42px] cursor-text"></div>
-                            <div id="subcommitteeChairDropdown" class="dropdown-menu hidden mt-1"></div>
-                        </div>
-                        <input type="hidden" id="subcommitteeChairId">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Anggota Bidang</label>
-                        <div class="relative">
-                            <div id="subcommitteeMembersContainer" class="w-full border border-gray-300 rounded-lg px-2 py-1 bg-white flex flex-wrap items-center min-h-[42px] cursor-text"></div>
-                            <div id="subcommitteeMembersDropdown" class="dropdown-menu hidden mt-1"></div>
-                        </div>
-                    </div>
+            <form id="createSubcommitteeBatchForm" class="flex-grow contents">
+                <div class="p-6 modal-content overflow-y-auto" id="subcommitteeFormsContainer">
+                    <!-- Batch subcommittee forms will be injected here -->
+                </div>
+                <div class="p-6">
+                     <button type="button" onclick="addBatchSubcommitteeForm()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition">+ Tambah Form Bidang</button>
                 </div>
                 <div class="p-6 border-t bg-gray-50 rounded-b-2xl flex space-x-3">
-                    <button type="button" onclick="closeSubcommitteeModal()" class="flex-1 w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-all">Batal</button>
-                    <button type="submit" class="flex-1 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all">Simpan Bidang</button>
+                    <button type="button" onclick="closeBatchSubcommitteeModal()" class="flex-1 w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-all">Batal</button>
+                    <button type="submit" class="flex-1 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all">Simpan Semua Bidang</button>
                 </div>
             </form>
         </div>
@@ -412,6 +400,7 @@
         let currentCommitteeId = null;
         let countdownInterval = null;
         let confirmAction = null;
+        let batchFormCounter = 0;
 
         // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', function() {
@@ -420,10 +409,9 @@
             document.getElementById('addEventForm').addEventListener('submit', handleEventFormSubmit);
             document.getElementById('divisionForm').addEventListener('submit', handleDivisionFormSubmit);
             document.getElementById('memberForm').addEventListener('submit', handleMemberFormSubmit);
-            document.getElementById('createSubcommitteeForm').addEventListener('submit', handleCreateSubcommitteeSubmit);
+            document.getElementById('createSubcommitteeBatchForm').addEventListener('submit', handleBatchSubcommitteeSubmit);
             document.getElementById('assignTaskToSubcommitteeForm').addEventListener('submit', assignTaskToSubcommittee);
             
-            // Confirmation Modal Listeners
             document.getElementById('confirmModalCancel').addEventListener('click', closeConfirmModal);
             document.getElementById('confirmModalConfirm').addEventListener('click', () => {
                 if (typeof confirmAction === 'function') {
@@ -434,7 +422,6 @@
 
             startCountdownTimers();
             
-            // Global listener to close custom dropdowns
             document.addEventListener('click', function(event) {
                 const dropdowns = document.querySelectorAll('.dropdown-menu');
                 const inputs = document.querySelectorAll('[id$="InputContainer"], [id$="Container"]');
@@ -1059,7 +1046,7 @@
             showNotification("Tugas berhasil diselesaikan!", "success");
         }
 
-        // --- EVENT DETAIL VIEW (For Members) & SUBCOMMITTEE CREATION ---
+        // --- KETUA PANITIA: EVENT DETAIL & SUBCOMMITTEE ---
         function showEventDetail(eventId, committeeId) {
             const event = events.find(e => e.id === eventId);
             const committee = committeeId ? event.committees.find(c => c.id === committeeId) : null;
@@ -1094,75 +1081,115 @@
             }
         }
 
-        function openSubcommitteeModal() {
-            document.getElementById('createSubcommitteeForm').reset();
-            document.getElementById('subcommitteeModal').classList.remove('hidden');
-            document.getElementById('subcommitteeModal').classList.add('flex');
-            setupSubcommitteeChairInput();
-            setupSubcommitteeMembersInput();
+        function openBatchSubcommitteeModal() {
+            batchFormCounter = 0;
+            const container = document.getElementById('subcommitteeFormsContainer');
+            container.innerHTML = '';
+            addBatchSubcommitteeForm(); // Add the first form automatically
+            document.getElementById('subcommitteeBatchModal').classList.remove('hidden');
+            document.getElementById('subcommitteeBatchModal').classList.add('flex');
         }
 
-        function closeSubcommitteeModal() {
-            document.getElementById('subcommitteeModal').classList.add('hidden');
-            document.getElementById('subcommitteeModal').classList.remove('flex');
-        }
-        
-        function setupSubcommitteeChairInput() {
-            const container = document.getElementById('subcommitteeChairContainer');
-            document.getElementById('subcommitteeChairId').value = '';
-            container.innerHTML = `<input type="text" id="subcommitteeChairSearch" class="w-full outline-none bg-transparent" placeholder="Pilih Ketua Bidang...">`;
-            const searchInput = document.getElementById('subcommitteeChairSearch');
-            searchInput.addEventListener('focus', () => populateSubcommitteeChairDropdown(''));
-            searchInput.addEventListener('input', () => populateSubcommitteeChairDropdown(searchInput.value));
+        function closeBatchSubcommitteeModal() {
+            document.getElementById('subcommitteeBatchModal').classList.add('hidden');
+            document.getElementById('subcommitteeBatchModal').classList.remove('flex');
         }
 
-        function setupSubcommitteeMembersInput() {
-            const container = document.getElementById('subcommitteeMembersContainer');
-            container.innerHTML = `<input type="text" id="subcommitteeMemberSearch" class="flex-grow outline-none bg-transparent" placeholder="Tambah Anggota...">`;
-            const searchInput = document.getElementById('subcommitteeMemberSearch');
-            searchInput.addEventListener('focus', () => populateSubcommitteeMembersDropdown(''));
-            searchInput.addEventListener('input', () => populateSubcommitteeMembersDropdown(searchInput.value));
+        function addBatchSubcommitteeForm() {
+            batchFormCounter++;
+            const container = document.getElementById('subcommitteeFormsContainer');
+            const formId = `batch-form-${batchFormCounter}`;
+
+            const formHtml = `
+                <div class="subcommittee-batch-form border p-4 rounded-lg bg-gray-50 relative mb-4" id="${formId}">
+                    <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold">&times;</button>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Bidang</label>
+                            <input type="text" class="batch-sc-name w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Contoh: Bidang Acara" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ketua Bidang</label>
+                            <div class="relative">
+                                <div id="batch-chair-container-${batchFormCounter}" class="w-full border border-gray-300 rounded-lg px-2 py-1 bg-white flex items-center min-h-[42px] cursor-text"></div>
+                                <div id="batch-chair-dropdown-${batchFormCounter}" class="dropdown-menu hidden mt-1"></div>
+                                <input type="hidden" class="batch-sc-chair-id">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Anggota Bidang</label>
+                            <div class="relative">
+                                <div id="batch-members-container-${batchFormCounter}" class="w-full border border-gray-300 rounded-lg px-2 py-1 bg-white flex flex-wrap items-center min-h-[42px] cursor-text"></div>
+                                <div id="batch-members-dropdown-${batchFormCounter}" class="dropdown-menu hidden mt-1"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', formHtml);
+            
+            // Setup interactive inputs for the new form
+            setupBatchChairInput(batchFormCounter);
+            setupBatchMembersInput(batchFormCounter);
         }
-        
-        function populateSubcommitteeChairDropdown(searchTerm = '') {
+
+        function setupBatchChairInput(counter) {
+            const container = document.getElementById(`batch-chair-container-${counter}`);
+            container.parentElement.querySelector('.batch-sc-chair-id').value = '';
+            container.innerHTML = `<input type="text" id="batch-chair-search-${counter}" class="w-full outline-none bg-transparent" placeholder="Pilih Ketua Bidang...">`;
+            
+            const searchInput = document.getElementById(`batch-chair-search-${counter}`);
+            searchInput.addEventListener('focus', () => populateBatchChairDropdown(counter, ''));
+            searchInput.addEventListener('input', (e) => populateBatchChairDropdown(counter, e.target.value));
+        }
+
+        function setupBatchMembersInput(counter) {
+            const container = document.getElementById(`batch-members-container-${counter}`);
+            container.innerHTML = `<input type="text" id="batch-members-search-${counter}" class="flex-grow outline-none bg-transparent" placeholder="Tambah Anggota...">`;
+            
+            const searchInput = document.getElementById(`batch-members-search-${counter}`);
+            searchInput.addEventListener('focus', () => populateBatchMembersDropdown(counter, ''));
+            searchInput.addEventListener('input', (e) => populateBatchMembersDropdown(counter, e.target.value));
+        }
+
+        function populateBatchChairDropdown(counter, searchTerm = '') {
             const event = events.find(e => e.id === currentEventId);
             const committee = event.committees.find(c => c.id === currentCommitteeId);
             const availableMembers = committee.members || [];
             
-            const dropdown = document.getElementById('subcommitteeChairDropdown');
+            const dropdown = document.getElementById(`batch-chair-dropdown-${counter}`);
             const filteredMembers = availableMembers.filter(m => 
                 m.name.toLowerCase().includes(searchTerm.toLowerCase())
             );
             
             dropdown.innerHTML = filteredMembers.map(member => 
-                `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" onclick="selectSubcommitteeChair(${member.id})">${member.name}</div>`
+                `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" onclick="selectBatchChair(${member.id}, ${counter})">${member.name}</div>`
             ).join('');
             dropdown.classList.remove('hidden');
         }
 
-        function selectSubcommitteeChair(memberId) {
+        function selectBatchChair(memberId, counter) {
             const member = members.find(m => m.id === memberId);
             if (!member) return;
-            document.getElementById('subcommitteeChairId').value = member.id;
-            const container = document.getElementById('subcommitteeChairContainer');
-            container.innerHTML = `<div class="tag">${member.name}<span class="tag-remove" onclick="event.stopPropagation(); setupSubcommitteeChairInput();">×</span></div>`;
-            document.getElementById('subcommitteeChairDropdown').classList.add('hidden');
-            const searchInput = document.getElementById('subcommitteeMemberSearch');
-            if (searchInput) {
-                 populateSubcommitteeMembersDropdown(searchInput.value);
-            }
+            
+            const container = document.getElementById(`batch-chair-container-${counter}`);
+            container.parentElement.querySelector('.batch-sc-chair-id').value = member.id;
+            container.innerHTML = `<div class="tag">${member.name}<span class="tag-remove" onclick="event.stopPropagation(); setupBatchChairInput(${counter});">×</span></div>`;
+            document.getElementById(`batch-chair-dropdown-${counter}`).classList.add('hidden');
+            
+            populateBatchMembersDropdown(counter, '');
         }
 
-        function populateSubcommitteeMembersDropdown(searchTerm = '') {
+        function populateBatchMembersDropdown(counter, searchTerm = '') {
             const event = events.find(e => e.id === currentEventId);
             const committee = event.committees.find(c => c.id === currentCommitteeId);
             const availableMembers = committee.members || [];
-            const chairId = document.getElementById('subcommitteeChairId').value;
             
-            const container = document.getElementById('subcommitteeMembersContainer');
-            const selectedMemberIds = Array.from(container.querySelectorAll('.tag')).map(tag => parseInt(tag.dataset.id));
+            const form = document.getElementById(`batch-form-${counter}`);
+            const chairId = form.querySelector('.batch-sc-chair-id').value;
+            const selectedMemberTags = form.querySelectorAll(`#batch-members-container-${counter} .tag`);
+            const selectedMemberIds = Array.from(selectedMemberTags).map(tag => parseInt(tag.dataset.id));
 
-            const dropdown = document.getElementById('subcommitteeMembersDropdown');
+            const dropdown = document.getElementById(`batch-members-dropdown-${counter}`);
             const filteredMembers = availableMembers.filter(m => 
                 m.id != chairId &&
                 !selectedMemberIds.includes(m.id) &&
@@ -1170,49 +1197,72 @@
             );
             
             dropdown.innerHTML = filteredMembers.map(member => 
-                `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" onclick="selectSubcommitteeMember(${member.id})">${member.name}</div>`
+                `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" onclick="selectBatchMember(${member.id}, ${counter})">${member.name}</div>`
             ).join('');
             dropdown.classList.remove('hidden');
         }
 
-        function selectSubcommitteeMember(memberId) {
+        function selectBatchMember(memberId, counter) {
             const member = members.find(m => m.id === memberId);
             if (!member) return;
 
-            const container = document.getElementById('subcommitteeMembersContainer');
-            const searchInput = container.querySelector('#subcommitteeMemberSearch');
+            const container = document.getElementById(`batch-members-container-${counter}`);
+            const searchInput = container.querySelector(`#batch-members-search-${counter}`);
             const tagHtml = `<div class="tag" data-id="${memberId}">${member.name}<span class="tag-remove" onclick="event.stopPropagation(); this.parentElement.remove();">×</span></div>`;
             
             searchInput.insertAdjacentHTML('beforebegin', tagHtml);
             searchInput.value = '';
-            document.getElementById('subcommitteeMembersDropdown').classList.add('hidden');
+            document.getElementById(`batch-members-dropdown-${counter}`).classList.add('hidden');
         }
-        
-        function handleCreateSubcommitteeSubmit(e) {
+
+        function handleBatchSubcommitteeSubmit(e) {
             e.preventDefault();
-            const name = document.getElementById('subcommitteeNameModal').value;
-            const chairId = document.getElementById('subcommitteeChairId').value;
-            const memberTags = document.getElementById('subcommitteeMembersContainer').querySelectorAll('.tag');
-            
-            if (!name || !chairId) {
-                return showNotification("Nama bidang dan ketua bidang wajib diisi.", "error");
+            const forms = document.querySelectorAll('.subcommittee-batch-form');
+            const newSubcommittees = [];
+            let isValid = true;
+
+            forms.forEach(form => {
+                const name = form.querySelector('.batch-sc-name').value;
+                const chairId = form.querySelector('.batch-sc-chair-id').value;
+                const memberTags = form.querySelectorAll('[id^="batch-members-container"] .tag');
+                
+                if (!name || !chairId) {
+                    isValid = false;
+                    return;
+                }
+                
+                const chair = members.find(m => m.id == chairId);
+                const membersList = Array.from(memberTags).map(tag => members.find(m => m.id == tag.dataset.id));
+                
+                newSubcommittees.push({ name, chair, members: membersList });
+            });
+
+            if (!isValid) {
+                return showNotification("Setiap bidang harus memiliki nama dan ketua.", "error");
             }
-            
-            const chair = members.find(m => m.id == chairId);
-            const membersList = Array.from(memberTags).map(tag => members.find(m => m.id == tag.dataset.id));
-            
+            if(newSubcommittees.length === 0){
+                 return showNotification("Tambahkan setidaknya satu bidang.", "error");
+            }
+
             const event = events.find(e => e.id === currentEventId);
             const committee = event.committees.find(c => c.id === currentCommitteeId);
-            
-            const newId = (committee.subcommittees || []).reduce((max, sc) => Math.max(max, sc.id), 0) + 1;
             if (!committee.subcommittees) committee.subcommittees = [];
+
+            newSubcommittees.forEach(scData => {
+                 const newId = committee.subcommittees.reduce((max, sc) => Math.max(max, sc.id), 0) + 1;
+                 committee.subcommittees.push({
+                     id: newId,
+                     name: scData.name,
+                     chair: scData.chair,
+                     members: scData.members,
+                     tasks: []
+                 });
+            });
             
-            committee.subcommittees.push({ id: newId, name, chair, members: membersList, tasks: [] });
-            
-            closeSubcommitteeModal();
+            closeBatchSubcommitteeModal();
             showEventDetail(currentEventId, currentCommitteeId);
             updateAllPimpinanDashboards();
-            showNotification("Bidang baru berhasil dibuat!", "success");
+            showNotification(`${newSubcommittees.length} bidang baru berhasil dibuat!`, "success");
         }
 
         function assignTaskToSubcommittee(e) {
