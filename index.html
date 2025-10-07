@@ -23,7 +23,7 @@
         .chevron { transition: transform 0.3s ease; }
         .open .chevron { transform: rotate(180deg); }
         .tag { display: inline-flex; align-items-center; padding: 4px 8px; margin: 2px; background-color: #e0f2fe; color: #0369a1; border-radius: 9999px; font-size: 0.875rem; }
-        .tag-remove { margin-left: 6px; cursor: pointer; color: #0369a1; }
+        .tag-remove { margin-left: 6px; cursor: pointer; color: #0369a1; font-weight: bold; }
         .dropdown-menu { position: absolute; z-index: 10; background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); max-height: 200px; overflow-y: auto; width: 100%; }
     </style>
 </head>
@@ -306,10 +306,16 @@
                         <input type="date" id="eventDate" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label for="eventChair" class="block text-sm font-medium text-gray-700 mb-1">Ketua Panitia</label>
-                        <select id="eventChair" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">Pilih Ketua Panitia</option>
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ketua Panitia</label>
+                        <div class="relative">
+                            <div id="eventChairInputContainer" class="w-full border border-gray-300 rounded-lg px-2 py-1 bg-white flex items-center min-h-[42px] cursor-text">
+                                <!-- Search input is dynamically inserted here -->
+                            </div>
+                            <div id="eventChairDropdown" class="dropdown-menu hidden mt-1">
+                                <!-- Member list will be populated by JS -->
+                            </div>
+                        </div>
+                        <input type="hidden" id="eventChairId">
                     </div>
                 </div>
                 <div class="p-6 border-t bg-gray-50 rounded-b-2xl">
@@ -346,7 +352,7 @@
                 committees: [
                     {
                         id: 1,
-                        name: 'Tim Teknis',
+                        name: 'Kepanitiaan Peluncuran Produk Baru',
                         chair: { id: 1, name: 'Ahmad Fauzi' },
                         members: [{ id: 2, name: 'Budi Santoso' }],
                         subcommittees: [
@@ -378,11 +384,18 @@
             document.getElementById('addEventForm').addEventListener('submit', handleEventFormSubmit);
             document.getElementById('divisionForm').addEventListener('submit', handleDivisionFormSubmit);
             document.getElementById('memberForm').addEventListener('submit', handleMemberFormSubmit);
-            // document.getElementById('assignTaskForm').addEventListener('submit', assignTask); // This form was removed from HTML
             document.getElementById('assignSubcommitteeForm').addEventListener('submit', assignSubcommittee);
             document.getElementById('assignTaskToSubcommitteeForm').addEventListener('submit', assignTaskToSubcommittee);
             startCountdownTimers();
-            // populateSubcommitteeMembers(); This is now called within showEventDetail
+            
+            // Global listener to close custom dropdown
+            document.addEventListener('click', function(event) {
+                const chairDropdown = document.getElementById('eventChairDropdown');
+                const chairContainer = document.getElementById('eventChairInputContainer');
+                if (chairDropdown && chairContainer && !chairContainer.contains(event.target) && !chairDropdown.contains(event.target)) {
+                    chairDropdown.classList.add('hidden');
+                }
+            });
         });
 
         // --- AUTH & VIEW MANAGEMENT ---
@@ -554,7 +567,6 @@
                                 sc.tasks.forEach(task => { if (task.assignees) task.assignees = task.assignees.filter(a => a.id !== id); });
                             });
                         }
-                        // committee.tasks.forEach(task => { task.assignees = task.assignees.filter(a => a.id !== id); });
                     });
                 });
                 renderMemberManagementTable();
@@ -570,15 +582,51 @@
         }
 
         // --- PIMPINAN: EVENT CREATION & EDIT ---
+        
+        // --- Chair Search Dropdown Functions ---
+        function populateChairDropdown(searchTerm = '') {
+            const dropdown = document.getElementById('eventChairDropdown');
+            const filteredMembers = members.filter(m => 
+                m.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            
+            dropdown.innerHTML = filteredMembers.length > 0 
+                ? filteredMembers.map(member => 
+                    `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" onclick="selectChair(${member.id})">${member.name}</div>`
+                  ).join('')
+                : `<div class="px-4 py-2 text-gray-500">Tidak ada hasil ditemukan</div>`;
+
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectChair(memberId) {
+            const member = members.find(m => m.id === memberId);
+            if (!member) return;
+
+            const container = document.getElementById('eventChairInputContainer');
+            document.getElementById('eventChairId').value = member.id;
+            
+            container.innerHTML = `<div class="tag">${member.name}<span class="tag-remove" onclick="event.stopPropagation(); removeSelectedChair();">×</span></div>`;
+            document.getElementById('eventChairDropdown').classList.add('hidden');
+        }
+
+        function removeSelectedChair() {
+            const container = document.getElementById('eventChairInputContainer');
+            document.getElementById('eventChairId').value = '';
+            
+            container.innerHTML = `<input type="text" id="eventChairSearch" class="w-full outline-none bg-transparent" placeholder="Pilih Ketua Panitia...">`;
+            
+            const searchInput = document.getElementById('eventChairSearch');
+            searchInput.addEventListener('focus', () => populateChairDropdown(''));
+            searchInput.addEventListener('input', () => populateChairDropdown(searchInput.value));
+            searchInput.focus();
+        }
+
         function openEventModal(eventId = null) {
             document.getElementById('addEventForm').reset();
+            document.getElementById('editEventId').value = '';
             document.getElementById('eventModalTitle').textContent = "Buat Event Baru";
-            document.getElementById('editEventId').value = "";
-
-            // Populate chair dropdown
-            const chairSelect = document.getElementById('eventChair');
-            chairSelect.innerHTML = '<option value="">Pilih Ketua Panitia</option>' + 
-                                  members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            removeSelectedChair(); // Reset the chair input component
 
             if (eventId) {
                 const eventToEdit = events.find(e => e.id === eventId);
@@ -587,9 +635,8 @@
                     document.getElementById('editEventId').value = eventId;
                     document.getElementById('eventName').value = eventToEdit.name;
                     document.getElementById('eventDate').value = eventToEdit.date;
-                    // Set the chair if a committee exists
-                    if (eventToEdit.committees && eventToEdit.committees.length > 0) {
-                        chairSelect.value = eventToEdit.committees[0].chair.id;
+                    if (eventToEdit.committees && eventToEdit.committees.length > 0 && eventToEdit.committees[0].chair) {
+                        selectChair(eventToEdit.committees[0].chair.id);
                     }
                 }
             }
@@ -598,23 +645,24 @@
             document.getElementById("eventModal").classList.add("flex");
         }
 
+
         function handleEventFormSubmit(e) {
             e.preventDefault();
             const eventName = document.getElementById('eventName').value;
             const eventDate = document.getElementById('eventDate').value;
-            const chairId = document.getElementById('eventChair').value;
+            const chairId = document.getElementById('eventChairId').value;
             const eventIdToEdit = document.getElementById('editEventId').value;
 
-            const chair = members.find(m => m.id == chairId);
-            if (!chair) {
+            if (!chairId) {
                 return showNotification("Ketua panitia harus dipilih.", "error");
             }
+            const chair = members.find(m => m.id == chairId);
             
             const committee = {
                 id: Date.now(),
                 name: `Kepanitiaan ${eventName}`,
                 chair: chair,
-                members: [],
+                members: members.filter(m => m.id != chairId), // Automatically add all other members
                 subcommittees: [],
                 tasks: []
             };
@@ -622,10 +670,9 @@
             if (eventIdToEdit) { // Edit mode
                 const eventIndex = events.findIndex(e => e.id == eventIdToEdit);
                 if (eventIndex !== -1) {
-                    // Preserve subcommittees and tasks from the old committee if it exists
                     const oldCommittee = events[eventIndex].committees[0];
                     if (oldCommittee) {
-                        committee.id = oldCommittee.id; // Keep the same committee ID
+                        committee.id = oldCommittee.id;
                         committee.subcommittees = oldCommittee.subcommittees;
                         committee.tasks = oldCommittee.tasks;
                     }
@@ -845,7 +892,7 @@
                     const isMember = committee.members.some(m => m.id === loggedInId);
                     let myRole = "Anggota";
                     if (isChair) myRole = "Ketua Panitia";
-                    else if (!isMember && committee.subcommittees) {
+                    else if (committee.subcommittees) {
                         for (const sc of committee.subcommittees) {
                             if (sc.chair?.id === loggedInId) {
                                 myRole = "Ketua Bidang";
@@ -859,15 +906,9 @@
                     const myTasksInEvent = [];
                     if (committee.subcommittees) {
                         committee.subcommittees.forEach(sc => {
-                            sc.tasks.forEach(task => {
-                                if (myRole === "Ketua Bidang" && sc.chair?.id === loggedInId) {
-                                    myTasksInEvent.push(task);
-                                } else if (myRole === "Anggota Bidang") {
-                                    if (sc.members.some(m => m.id === loggedInId)) {
-                                        myTasksInEvent.push(task);
-                                    }
-                                }
-                            });
+                            if (sc.chair?.id === loggedInId || sc.members.some(m => m.id === loggedInId)) {
+                                myTasksInEvent.push(...sc.tasks);
+                            }
                         });
                     }
                     totalTasks += myTasksInEvent.length;
@@ -959,10 +1000,9 @@
             if (!committee) return;
             const chairSelect = document.getElementById('subcommitteeChair');
             const membersDropdown = document.getElementById('subcommitteeMembersDropdown');
-            const availableMembers = members.filter(m => m.id !== committee.chair.id); // Exclude the main chair
+            const availableMembers = committee.members || [];
             chairSelect.innerHTML = '<option value="">Pilih Ketua Bidang</option>' + availableMembers.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
             
-            // Populate members dropdown (inside the multi-select tag input)
             const membersContainer = document.getElementById('subcommitteeMembersContainer');
             membersContainer.addEventListener('click', () => membersDropdown.classList.toggle('hidden'));
             membersDropdown.innerHTML = availableMembers.map(m => `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" onclick="selectSubcommitteeMember(${m.id})">${m.name}</div>`).join('');
@@ -1048,9 +1088,9 @@
             const myTasks = [];
             if (committee.subcommittees) {
                 committee.subcommittees.forEach(sc => {
-                    sc.tasks.forEach(task => {
-                        if (sc.members.some(m => m.id === loggedInUser.id)) {
-                            myTasks.push(task);
+                    sc.members.forEach(m => {
+                        if (m.id === loggedInUser.id) {
+                            myTasks.push(...sc.tasks);
                         }
                     });
                 });
@@ -1083,19 +1123,22 @@
                 const deadline = el.dataset.deadline;
                 if (!deadline) return;
                 const deadlineTime = new Date(deadline + 'T23:59:59').getTime();
-                const distance = new Date().getTime() - deadlineTime;
-                if (distance > 0) {
+                const now = new Date().getTime();
+                const distance = deadlineTime - now;
+
+                if (distance < 0) {
                     el.innerHTML = "Waktu Habis";
                     el.classList.add('text-red-700');
                     return;
                 }
-                const days = Math.floor(Math.abs(distance) / 86400000);
-                const hours = Math.floor((Math.abs(distance) % 86400000) / 3600000);
-                const minutes = Math.floor((Math.abs(distance) % 3600000) / 60000);
-                const seconds = Math.floor((Math.abs(distance) % 60000) / 1000);
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
                 el.innerHTML = `Sisa Waktu: ${days}h ${hours}j ${minutes}m ${seconds}d`;
             });
         }
     </script>
 </body>
 </html>
+
