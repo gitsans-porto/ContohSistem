@@ -170,35 +170,18 @@
                 </div>
                 <!-- Tampilan untuk Ketua Panitia -->
                 <div id="ketuaPanitiaView" class="hidden">
-                    <div class="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-100">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Buat Bidang & Tugas</h3>
-                        <form id="assignSubcommitteeForm">
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Nama Bidang</label>
-                                <input type="text" id="subcommitteeName" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Ketua Bidang</label>
-                                <select id="subcommitteeChair" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="">Pilih Ketua Bidang</option>
-                                </select>
-                            </div>
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Anggota Bidang</label>
-                                <div class="relative">
-                                    <div id="subcommitteeMembersContainer" class="flex flex-wrap border border-gray-300 rounded-lg px-3 py-2 min-h-[42px] bg-gray-50 cursor-pointer"></div>
-                                    <div id="subcommitteeMembersDropdown" class="dropdown-menu hidden"></div>
-                                </div>
-                            </div>
-                            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all">Buat Bidang</button>
-                        </form>
+                     <div class="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-100">
+                        <div class="flex justify-between items-center">
+                             <h3 class="text-lg font-semibold text-gray-900">Manajemen Bidang</h3>
+                             <button onclick="openSubcommitteeModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm">+ Buat Bidang</button>
+                        </div>
                     </div>
 
                     <div class="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-100">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Buat Tugas untuk Bidang</h3>
                         <form id="assignTaskToSubcommitteeForm">
                             <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Bidang</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Bidang</label>
                                 <select id="taskSubcommittee" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                     <option value="">Pilih Bidang</option>
                                 </select>
@@ -261,7 +244,7 @@
             </div>
         </div>
     </div>
-    <div id="committeeDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+     <div id="committeeDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 flex flex-col" style="height: 90vh;">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
                 <h3 id="committeeDetailTitle" class="text-xl font-semibold text-gray-900"></h3>
@@ -324,6 +307,52 @@
             </form>
         </div>
     </div>
+    <!-- New Subcommittee Modal -->
+    <div id="subcommitteeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 flex flex-col">
+            <div class="p-6 border-b">
+                <h2 class="text-xl font-bold text-gray-800">Buat Bidang Baru</h2>
+            </div>
+            <form id="createSubcommitteeForm">
+                <div class="p-6 modal-content overflow-y-auto space-y-4">
+                    <div>
+                        <label for="subcommitteeNameModal" class="block text-sm font-medium text-gray-700 mb-1">Nama Bidang</label>
+                        <input type="text" id="subcommitteeNameModal" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Contoh: Bidang Konsumsi">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ketua Bidang</label>
+                        <div class="relative">
+                            <div id="subcommitteeChairContainer" class="w-full border border-gray-300 rounded-lg px-2 py-1 bg-white flex items-center min-h-[42px] cursor-text"></div>
+                            <div id="subcommitteeChairDropdown" class="dropdown-menu hidden mt-1"></div>
+                        </div>
+                        <input type="hidden" id="subcommitteeChairId">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Anggota Bidang</label>
+                        <div class="relative">
+                            <div id="subcommitteeMembersContainer" class="w-full border border-gray-300 rounded-lg px-2 py-1 bg-white flex flex-wrap items-center min-h-[42px] cursor-text"></div>
+                            <div id="subcommitteeMembersDropdown" class="dropdown-menu hidden mt-1"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 border-t bg-gray-50 rounded-b-2xl flex space-x-3">
+                    <button type="button" onclick="closeSubcommitteeModal()" class="flex-1 w-full bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold text-lg hover:bg-gray-300 transition-all">Batal</button>
+                    <button type="submit" class="flex-1 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all">Simpan Bidang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 text-center">
+            <h3 id="confirmModalTitle" class="text-lg font-semibold text-gray-900 mb-2">Konfirmasi Aksi</h3>
+            <p id="confirmModalText" class="text-gray-600 mb-6">Apakah Anda yakin?</p>
+            <div class="flex space-x-3">
+                <button id="confirmModalCancel" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors font-medium">Batal</button>
+                <button id="confirmModalConfirm" class="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-all font-medium">Hapus</button>
+            </div>
+        </div>
+    </div>
     <div id="notification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hidden notification">
         <div class="flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -382,6 +411,7 @@
         let currentEventId = null;
         let currentCommitteeId = null;
         let countdownInterval = null;
+        let confirmAction = null;
 
         // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', function() {
@@ -390,19 +420,61 @@
             document.getElementById('addEventForm').addEventListener('submit', handleEventFormSubmit);
             document.getElementById('divisionForm').addEventListener('submit', handleDivisionFormSubmit);
             document.getElementById('memberForm').addEventListener('submit', handleMemberFormSubmit);
-            document.getElementById('assignSubcommitteeForm').addEventListener('submit', assignSubcommittee);
+            document.getElementById('createSubcommitteeForm').addEventListener('submit', handleCreateSubcommitteeSubmit);
             document.getElementById('assignTaskToSubcommitteeForm').addEventListener('submit', assignTaskToSubcommittee);
+            
+            // Confirmation Modal Listeners
+            document.getElementById('confirmModalCancel').addEventListener('click', closeConfirmModal);
+            document.getElementById('confirmModalConfirm').addEventListener('click', () => {
+                if (typeof confirmAction === 'function') {
+                    confirmAction();
+                }
+                closeConfirmModal();
+            });
+
             startCountdownTimers();
             
-            // Global listener to close custom dropdown
+            // Global listener to close custom dropdowns
             document.addEventListener('click', function(event) {
-                const chairDropdown = document.getElementById('eventChairDropdown');
-                const chairContainer = document.getElementById('eventChairInputContainer');
-                if (chairDropdown && chairContainer && !chairContainer.contains(event.target) && !chairDropdown.contains(event.target)) {
-                    chairDropdown.classList.add('hidden');
+                const dropdowns = document.querySelectorAll('.dropdown-menu');
+                const inputs = document.querySelectorAll('[id$="InputContainer"], [id$="Container"]');
+                let clickedInside = false;
+
+                for(let input of inputs) {
+                    if(input.contains(event.target)) {
+                        clickedInside = true;
+                        break;
+                    }
+                }
+                for(let dropdown of dropdowns) {
+                    if(dropdown.contains(event.target)) {
+                        clickedInside = true;
+                        break;
+                    }
+                }
+
+                if (!clickedInside) {
+                    for(let dropdown of dropdowns) {
+                        dropdown.classList.add('hidden');
+                    }
                 }
             });
         });
+        
+        // --- CONFIRMATION MODAL ---
+        function showConfirmModal(title, text, onConfirm) {
+            document.getElementById('confirmModalTitle').textContent = title;
+            document.getElementById('confirmModalText').textContent = text;
+            confirmAction = onConfirm;
+            document.getElementById('confirmModal').classList.remove('hidden');
+            document.getElementById('confirmModal').classList.add('flex');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            document.getElementById('confirmModal').classList.remove('flex');
+            confirmAction = null;
+        }
 
         // --- AUTH & VIEW MANAGEMENT ---
         function handleLogin(e) {
@@ -498,16 +570,21 @@
         }
 
         function deleteDivision(id) {
-            if (confirm("Apakah Anda yakin ingin menghapus divisi ini?")) {
-                const divToDelete = divisions.find(d => d.id === id);
-                if (divToDelete) {
-                    divisions = divisions.filter(d => d.id !== id);
-                    members = members.filter(m => m.division !== divToDelete.name);
-                    renderDivisionManagementTable();
-                    renderMemberManagementTable();
-                    populateMemberDivisionSelect();
+             showConfirmModal(
+                'Hapus Divisi',
+                'Apakah Anda yakin ingin menghapus divisi ini? Semua anggota dalam divisi ini juga akan terhapus.',
+                () => {
+                    const divToDelete = divisions.find(d => d.id === id);
+                    if (divToDelete) {
+                        divisions = divisions.filter(d => d.id !== id);
+                        members = members.filter(m => m.division !== divToDelete.name);
+                        renderDivisionManagementTable();
+                        renderMemberManagementTable();
+                        populateMemberDivisionSelect();
+                        showNotification("Divisi berhasil dihapus.", "success");
+                    }
                 }
-            }
+            );
         }
 
         function resetDivisionForm() {
@@ -560,23 +637,27 @@
         }
 
         function deleteMember(id) {
-            if (confirm("Apakah Anda yakin ingin menghapus anggota ini?")) {
-                members = members.filter(m => m.id !== id);
-                events.forEach(event => {
-                    event.committees.forEach(committee => {
-                        if (committee.chair?.id === id) committee.chair = null;
-                        committee.members = committee.members.filter(m => m.id !== id);
-                        if (committee.subcommittees) {
-                            committee.subcommittees.forEach(sc => {
-                                if (sc.chair?.id === id) sc.chair = null;
-                                sc.members = sc.members.filter(m => m.id !== id);
-                                sc.tasks.forEach(task => { if (task.assignees) task.assignees = task.assignees.filter(a => a.id !== id); });
-                            });
-                        }
+            showConfirmModal(
+                'Hapus Anggota',
+                'Apakah Anda yakin ingin menghapus anggota ini? Anggota ini akan dihapus dari semua event dan tugas.',
+                () => {
+                    members = members.filter(m => m.id !== id);
+                    events.forEach(event => {
+                        event.committees.forEach(committee => {
+                            if (committee.chair?.id === id) committee.chair = null;
+                            committee.members = committee.members.filter(m => m.id !== id);
+                            if (committee.subcommittees) {
+                                committee.subcommittees.forEach(sc => {
+                                    if (sc.chair?.id === id) sc.chair = null;
+                                    sc.members = sc.members.filter(m => m.id !== id);
+                                });
+                            }
+                        });
                     });
-                });
-                renderMemberManagementTable();
-            }
+                    renderMemberManagementTable();
+                    showNotification("Anggota berhasil dihapus.", "success");
+                }
+            );
         }
 
         function resetMemberForm() {
@@ -649,7 +730,6 @@
             document.getElementById("eventModal").classList.add("flex");
         }
 
-
         function handleEventFormSubmit(e) {
             e.preventDefault();
             const eventName = document.getElementById('eventName').value;
@@ -707,11 +787,15 @@
 
         function deleteEvent(event, eventId) {
             event.stopPropagation();
-            if(confirm("Apakah Anda yakin ingin menghapus event ini?")) {
-                events = events.filter(e => e.id !== eventId);
-                renderPimpinanView();
-                showNotification("Event berhasil dihapus.", "success");
-            }
+            showConfirmModal(
+                'Hapus Event',
+                'Apakah Anda yakin ingin menghapus event ini? Aksi ini tidak dapat dibatalkan.',
+                () => {
+                    events = events.filter(e => e.id !== eventId);
+                    renderPimpinanView();
+                    showNotification("Event berhasil dihapus.", "success");
+                }
+            );
         }
         
         function openSubcommitteeDetailModal(eventId, committeeId, subcommitteeId) {
@@ -975,7 +1059,7 @@
             showNotification("Tugas berhasil diselesaikan!", "success");
         }
 
-        // --- EVENT DETAIL VIEW (For Members) ---
+        // --- EVENT DETAIL VIEW (For Members) & SUBCOMMITTEE CREATION ---
         function showEventDetail(eventId, committeeId) {
             const event = events.find(e => e.id === eventId);
             const committee = committeeId ? event.committees.find(c => c.id === committeeId) : null;
@@ -987,73 +1071,148 @@
             document.getElementById("eventDetailTitle").textContent = `${event.name}`;
             document.getElementById("eventDetailDate").textContent = `Tanggal: ${formatDate(event.date)}`;
             const backButtonContainer = document.getElementById('backButtonContainer');
-            backButtonContainer.innerHTML = loggedInUser.role === 'anggota' ? `<button onclick="renderAnggotaDashboard()" class="text-blue-600 hover:underline">&larr; Kembali ke Dashboard Saya</button>` : `<button onclick="renderPimpinanView()" class="text-blue-600 hover:underline">&larr; Kembali ke Dashboard Pimpinan</button>`;
+            backButtonContainer.innerHTML = `<button onclick="renderAnggotaDashboard()" class="text-blue-600 hover:underline">&larr; Kembali ke Dashboard Saya</button>`;
+            
             const isChair = loggedInUser.id === committee.chair?.id;
             const isSubcommitteeChair = committee.subcommittees && committee.subcommittees.some(sc => sc.chair?.id === loggedInUser.id);
+
             document.getElementById("ketuaPanitiaView").classList.toggle('hidden', !isChair);
             document.getElementById("ketuaBidangView").classList.toggle('hidden', !isSubcommitteeChair);
             document.getElementById("anggotaView").classList.toggle('hidden', isChair || isSubcommitteeChair);
+
             if (isChair) {
                 document.getElementById("eventRoleInfo").innerHTML = `<span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">Ketua Panitia</span>`;
-                populateSubcommitteeMembers();
                 renderAssignedSubcommittees(event, committee);
+                const taskSubcommitteeSelect = document.getElementById('taskSubcommittee');
+                taskSubcommitteeSelect.innerHTML = '<option value="">Pilih Bidang</option>' + (committee.subcommittees || []).map(sc => `<option value="${sc.id}">${sc.name}</option>`).join('');
             } else if (isSubcommitteeChair) {
                 document.getElementById("eventRoleInfo").innerHTML = `<span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">Ketua Bidang</span>`;
                 renderMySubcommitteeTasks(event, committee);
             } else {
-                document.getElementById("eventRoleInfo").innerHTML = `<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Anggota Panitia</span>`;
+                document.getElementById("eventRoleInfo").innerHTML = `<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Anggota Bidang</span>`;
                 renderMyTasks(event, committee);
             }
         }
 
-        function populateSubcommitteeMembers() {
+        function openSubcommitteeModal() {
+            document.getElementById('createSubcommitteeForm').reset();
+            document.getElementById('subcommitteeModal').classList.remove('hidden');
+            document.getElementById('subcommitteeModal').classList.add('flex');
+            setupSubcommitteeChairInput();
+            setupSubcommitteeMembersInput();
+        }
+
+        function closeSubcommitteeModal() {
+            document.getElementById('subcommitteeModal').classList.add('hidden');
+            document.getElementById('subcommitteeModal').classList.remove('flex');
+        }
+        
+        function setupSubcommitteeChairInput() {
+            const container = document.getElementById('subcommitteeChairContainer');
+            document.getElementById('subcommitteeChairId').value = '';
+            container.innerHTML = `<input type="text" id="subcommitteeChairSearch" class="w-full outline-none bg-transparent" placeholder="Pilih Ketua Bidang...">`;
+            const searchInput = document.getElementById('subcommitteeChairSearch');
+            searchInput.addEventListener('focus', () => populateSubcommitteeChairDropdown(''));
+            searchInput.addEventListener('input', () => populateSubcommitteeChairDropdown(searchInput.value));
+        }
+
+        function setupSubcommitteeMembersInput() {
+            const container = document.getElementById('subcommitteeMembersContainer');
+            container.innerHTML = `<input type="text" id="subcommitteeMemberSearch" class="flex-grow outline-none bg-transparent" placeholder="Tambah Anggota...">`;
+            const searchInput = document.getElementById('subcommitteeMemberSearch');
+            searchInput.addEventListener('focus', () => populateSubcommitteeMembersDropdown(''));
+            searchInput.addEventListener('input', () => populateSubcommitteeMembersDropdown(searchInput.value));
+        }
+        
+        function populateSubcommitteeChairDropdown(searchTerm = '') {
             const event = events.find(e => e.id === currentEventId);
-            if (!event) return;
             const committee = event.committees.find(c => c.id === currentCommitteeId);
-            if (!committee) return;
-            const chairSelect = document.getElementById('subcommitteeChair');
-            const membersDropdown = document.getElementById('subcommitteeMembersDropdown');
             const availableMembers = committee.members || [];
-            chairSelect.innerHTML = '<option value="">Pilih Ketua Bidang</option>' + availableMembers.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
             
-            const membersContainer = document.getElementById('subcommitteeMembersContainer');
-            membersContainer.addEventListener('click', () => membersDropdown.classList.toggle('hidden'));
-            membersDropdown.innerHTML = availableMembers.map(m => `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" onclick="selectSubcommitteeMember(${m.id})">${m.name}</div>`).join('');
+            const dropdown = document.getElementById('subcommitteeChairDropdown');
+            const filteredMembers = availableMembers.filter(m => 
+                m.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
             
-            const taskSubcommitteeSelect = document.getElementById('taskSubcommittee');
-            taskSubcommitteeSelect.innerHTML = '<option value="">Pilih Bidang</option>' + (committee.subcommittees || []).map(sc => `<option value="${sc.id}">${sc.name}</option>`).join('');
+            dropdown.innerHTML = filteredMembers.map(member => 
+                `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" onclick="selectSubcommitteeChair(${member.id})">${member.name}</div>`
+            ).join('');
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectSubcommitteeChair(memberId) {
+            const member = members.find(m => m.id === memberId);
+            if (!member) return;
+            document.getElementById('subcommitteeChairId').value = member.id;
+            const container = document.getElementById('subcommitteeChairContainer');
+            container.innerHTML = `<div class="tag">${member.name}<span class="tag-remove" onclick="event.stopPropagation(); setupSubcommitteeChairInput();">×</span></div>`;
+            document.getElementById('subcommitteeChairDropdown').classList.add('hidden');
+            const searchInput = document.getElementById('subcommitteeMemberSearch');
+            if (searchInput) {
+                 populateSubcommitteeMembersDropdown(searchInput.value);
+            }
+        }
+
+        function populateSubcommitteeMembersDropdown(searchTerm = '') {
+            const event = events.find(e => e.id === currentEventId);
+            const committee = event.committees.find(c => c.id === currentCommitteeId);
+            const availableMembers = committee.members || [];
+            const chairId = document.getElementById('subcommitteeChairId').value;
+            
+            const container = document.getElementById('subcommitteeMembersContainer');
+            const selectedMemberIds = Array.from(container.querySelectorAll('.tag')).map(tag => parseInt(tag.dataset.id));
+
+            const dropdown = document.getElementById('subcommitteeMembersDropdown');
+            const filteredMembers = availableMembers.filter(m => 
+                m.id != chairId &&
+                !selectedMemberIds.includes(m.id) &&
+                m.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            
+            dropdown.innerHTML = filteredMembers.map(member => 
+                `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" onclick="selectSubcommitteeMember(${member.id})">${member.name}</div>`
+            ).join('');
+            dropdown.classList.remove('hidden');
         }
 
         function selectSubcommitteeMember(memberId) {
             const member = members.find(m => m.id === memberId);
             if (!member) return;
+
             const container = document.getElementById('subcommitteeMembersContainer');
-            if (container.querySelector(`[data-id="${memberId}"]`)) return;
+            const searchInput = container.querySelector('#subcommitteeMemberSearch');
             const tagHtml = `<div class="tag" data-id="${memberId}">${member.name}<span class="tag-remove" onclick="event.stopPropagation(); this.parentElement.remove();">×</span></div>`;
-            container.insertAdjacentHTML('beforeend', tagHtml);
+            
+            searchInput.insertAdjacentHTML('beforebegin', tagHtml);
+            searchInput.value = '';
             document.getElementById('subcommitteeMembersDropdown').classList.add('hidden');
         }
-
-        function assignSubcommittee(e) {
+        
+        function handleCreateSubcommitteeSubmit(e) {
             e.preventDefault();
-            const name = document.getElementById('subcommitteeName').value;
-            const chairId = document.getElementById('subcommitteeChair').value;
-            const container = document.getElementById('subcommitteeMembersContainer');
-            const memberTags = container.querySelectorAll('.tag');
-            if (!name || !chairId) return showNotification("Nama bidang dan ketua bidang wajib diisi.", "error");
+            const name = document.getElementById('subcommitteeNameModal').value;
+            const chairId = document.getElementById('subcommitteeChairId').value;
+            const memberTags = document.getElementById('subcommitteeMembersContainer').querySelectorAll('.tag');
+            
+            if (!name || !chairId) {
+                return showNotification("Nama bidang dan ketua bidang wajib diisi.", "error");
+            }
+            
             const chair = members.find(m => m.id == chairId);
-            const membersList = Array.from(memberTags).map(tag => members.find(m => m.id == tag.dataset.id)).filter(Boolean);
+            const membersList = Array.from(memberTags).map(tag => members.find(m => m.id == tag.dataset.id));
+            
             const event = events.find(e => e.id === currentEventId);
             const committee = event.committees.find(c => c.id === currentCommitteeId);
+            
             const newId = (committee.subcommittees || []).reduce((max, sc) => Math.max(max, sc.id), 0) + 1;
             if (!committee.subcommittees) committee.subcommittees = [];
+            
             committee.subcommittees.push({ id: newId, name, chair, members: membersList, tasks: [] });
-            document.getElementById('assignSubcommitteeForm').reset();
-            container.innerHTML = '';
-            populateSubcommitteeMembers();
-            renderAssignedSubcommittees(event, committee);
+            
+            closeSubcommitteeModal();
+            showEventDetail(currentEventId, currentCommitteeId);
             updateAllPimpinanDashboards();
-            showNotification("Bidang berhasil dibuat!", "success");
+            showNotification("Bidang baru berhasil dibuat!", "success");
         }
 
         function assignTaskToSubcommittee(e) {
@@ -1062,11 +1221,14 @@
             const taskName = document.getElementById('taskNameForSubcommittee').value;
             const deadline = document.getElementById('taskDeadlineForSubcommittee').value;
             if (!subcommitteeId || !taskName || !deadline) return showNotification("Semua field wajib diisi.", "error");
+            
             const event = events.find(e => e.id === currentEventId);
             const committee = event.committees.find(c => c.id === currentCommitteeId);
             const subcommittee = committee.subcommittees.find(sc => sc.id == subcommitteeId);
+            
             const newTaskId = (committee.subcommittees.flatMap(sc => sc.tasks).reduce((max, t) => Math.max(max, t.id), 0)) + 1;
             subcommittee.tasks.push({ id: newTaskId, name: taskName, status: 'in-progress', assignedDate: new Date().toISOString().split("T")[0], deadline, photoUrl: null, completedDate: null });
+            
             document.getElementById('assignTaskToSubcommitteeForm').reset();
             renderAssignedSubcommittees(event, committee);
             updateAllPimpinanDashboards();
@@ -1075,15 +1237,25 @@
 
         function renderAssignedSubcommittees(event, committee) {
             const container = document.getElementById("assignedSubcommitteesList");
-            container.innerHTML = (committee.subcommittees || []).length === 0 ? `<div class="text-center text-gray-500 p-4">Belum ada bidang.</div>` : committee.subcommittees.map(sc => {
-                const tasksHtml = sc.tasks.length === 0 ? '<p class="text-gray-500 text-sm">Belum ada tugas.</p>' : sc.tasks.map(task => {
-                    const proofButton = (task.status === 'completed' && task.photoUrl)
-                        ? `<button onclick="openProofDetailModal(${event.id}, ${committee.id}, ${sc.id}, ${task.id})" class="mt-2 text-sm text-blue-600 hover:underline">Lihat Bukti</button>`
-                        : '';
-                    return `<div class="border rounded-lg p-3 ${task.status === "completed" ? "bg-green-50" : "bg-white"}"><p class="font-medium ${task.status === "completed" ? "line-through text-gray-500" : ""}">${task.name}</p><p class="text-sm text-red-500">Deadline: ${formatDate(task.deadline)}</p>${task.status === 'completed' ? `<p class="text-sm text-green-600 mt-1">✓ Selesai pada ${formatDate(task.completedDate)}</p>` : ''}${proofButton}</div>`;
-                }).join('');
-                return `<div class="border rounded-lg p-4 bg-gray-50 mb-4"><h4 class="font-bold text-gray-800 mb-2">${sc.name}</h4><p class="text-sm text-gray-600 mb-2">Ketua: ${sc.chair.name}</p><div class="space-y-2">${tasksHtml}</div></div>`;
-            }).join("");
+            container.innerHTML = (committee.subcommittees || []).length === 0 ? `<div class="text-center text-gray-500 p-4">Belum ada bidang yang dibuat.</div>` : 
+                (committee.subcommittees || []).map(sc => {
+                    const tasksHtml = sc.tasks.length === 0 ? '<p class="text-gray-500 text-sm p-3">Belum ada tugas.</p>' : sc.tasks.map(task => {
+                        const proofButton = (task.status === 'completed' && task.photoUrl)
+                            ? `<button onclick="openProofDetailModal(${event.id}, ${committee.id}, ${sc.id}, ${task.id})" class="mt-2 text-sm text-blue-600 hover:underline">Lihat Bukti</button>`
+                            : '';
+                        return `<div class="border rounded-lg p-3 ${task.status === "completed" ? "bg-green-50" : "bg-white"}">
+                                    <p class="font-medium ${task.status === "completed" ? "line-through text-gray-500" : ""}">${task.name}</p>
+                                    <p class="text-sm text-red-500">Deadline: ${formatDate(task.deadline)}</p>
+                                    ${task.status === 'completed' ? `<p class="text-sm text-green-600 mt-1">✓ Selesai pada ${formatDate(task.completedDate)}</p>` : ''}
+                                    ${proofButton}
+                                </div>`;
+                    }).join('');
+                    return `<div class="border rounded-lg p-4 bg-gray-50 mb-4">
+                                <h4 class="font-bold text-gray-800 mb-2">${sc.name}</h4>
+                                <p class="text-sm text-gray-600 mb-2">Ketua: ${sc.chair.name}</p>
+                                <div class="space-y-2">${tasksHtml}</div>
+                            </div>`;
+                }).join("");
         }
 
         function renderMySubcommitteeTasks(event, committee) {
