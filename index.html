@@ -236,7 +236,7 @@
             </div>
             <div class="flex space-x-3">
                 <button onclick="closePhotoModal()" class="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors">Batal</button>
-                <button onclick="submitPhoto()" class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg hover:from-green-700 hover:to-green-800 transition-all">✅ Konfirmasi</button>
+                <button onclick="submitPhoto()" class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg hover:from-green-700 hover:to-green-800 transition-all">✅ Kirim Bukti</button>
             </div>
         </div>
     </div>
@@ -381,7 +381,7 @@
                                 members: [ {id: 3, name: 'Citra Dewi'} ],
                                 tasks: [
                                     { id: 1, name: 'Siapkan Halaman Website', status: 'completed', assignedDate: '2025-10-01', completedDate: '2025-10-03', deadline: '2025-10-10', photoUrl: 'https://placehold.co/600x400/1D4ED8/FFFFFF?text=Bukti+Website', photoDescription: 'Halaman landing page produk baru telah selesai dibuat dan diunggah ke server.' },
-                                    { id: 2, name: 'Uji Coba Formulir Kontak', status: 'in-progress', assignedDate: '2025-10-02', deadline: '2025-10-12', photoUrl: null, completedDate: null }
+                                    { id: 2, name: 'Uji Coba Formulir Kontak', status: 'in-progress', assignedDate: '2025-10-02', deadline: '2025-10-12', photoUrl: null, photoDescription: null, completedDate: null }
                                 ]
                             }
                         ],
@@ -910,10 +910,7 @@
         }
         
         function openProofDetailModal(eventId, committeeId, subcommitteeId, taskId) {
-            const event = events.find(e => e.id === eventId);
-            const committee = event.committees.find(c => c.id === committeeId);
-            const subcommittee = committee.subcommittees.find(sc => sc.id === subcommitteeId);
-            const task = subcommittee.tasks.find(t => t.id === taskId);
+            const task = findTaskByIds(eventId, committeeId, subcommitteeId, taskId);
             if (!task) return;
             document.getElementById('proofDetailTitle').textContent = `Bukti Tugas: ${task.name}`;
             document.getElementById('proofDescription').textContent = task.photoDescription || 'Tidak ada keterangan.';
@@ -1016,13 +1013,14 @@
         function submitPhoto() {
             if (!document.getElementById("photoInput").files.length) return showNotification("Mohon upload foto bukti!", "error");
             const description = document.getElementById("photoDescription").value;
+
             for (const event of events) {
                 for (const committee of event.committees) {
                     if (committee.subcommittees) {
                         for (const subcommittee of committee.subcommittees) {
                             const task = subcommittee.tasks.find(t => t.id === currentTaskId);
                             if (task) {
-                                task.status = "completed";
+                                task.status = "pending-approval"; // Changed from 'completed'
                                 task.completedDate = new Date().toISOString().split("T")[0];
                                 task.photoUrl = `https://placehold.co/600x400/a8a29e/FFFFFF?text=Bukti+Tugas+${task.id}`; 
                                 task.photoDescription = description;
@@ -1039,10 +1037,42 @@
                 renderAnggotaDashboard();
             }
             closePhotoModal();
-            showNotification("Tugas berhasil diselesaikan!", "success");
+            showNotification("Bukti berhasil dikirim untuk verifikasi!", "success");
         }
 
-        // --- KETUA PANITIA: EVENT DETAIL & SUBCOMMITTEE ---
+        // --- KETUA PANITIA: EVENT DETAIL, SUBCOMMITTEE, & TASK APPROVAL ---
+        function findTaskByIds(eventId, committeeId, subcommitteeId, taskId) {
+            const event = events.find(e => e.id === eventId);
+            if (!event) return null;
+            const committee = event.committees.find(c => c.id === committeeId);
+            if (!committee) return null;
+            const subcommittee = committee.subcommittees.find(sc => sc.id === subcommitteeId);
+            if (!subcommittee) return null;
+            return subcommittee.tasks.find(t => t.id === taskId);
+        }
+
+        function approveTask(eventId, committeeId, subcommitteeId, taskId) {
+            const task = findTaskByIds(eventId, committeeId, subcommitteeId, taskId);
+            if(task) {
+                task.status = 'completed';
+                showEventDetail(currentEventId, currentCommitteeId);
+                updateAllPimpinanDashboards();
+                showNotification("Tugas telah disetujui.", "success");
+            }
+        }
+
+        function rejectTask(eventId, committeeId, subcommitteeId, taskId) {
+            const task = findTaskByIds(eventId, committeeId, subcommitteeId, taskId);
+            if (task) {
+                task.status = 'in-progress';
+                task.photoUrl = null;
+                task.photoDescription = null;
+                task.completedDate = null;
+                showEventDetail(currentEventId, currentCommitteeId);
+                showNotification("Tugas telah ditolak dan dikembalikan.", "warning");
+            }
+        }
+
         function showEventDetail(eventId, committeeId) {
             const event = events.find(e => e.id === eventId);
             const committee = committeeId ? event.committees.find(c => c.id === committeeId) : null;
@@ -1317,6 +1347,7 @@
                     assignedDate: new Date().toISOString().split("T")[0], 
                     deadline: task.deadline, 
                     photoUrl: null, 
+                    photoDescription: null,
                     completedDate: null 
                 });
             });
@@ -1335,15 +1366,34 @@
             container.innerHTML = (committee.subcommittees || []).length === 0 ? `<div class="text-center text-gray-500 p-4">Belum ada bidang yang dibuat.</div>` : 
                 (committee.subcommittees || []).map(sc => {
                     const tasksHtml = sc.tasks.length === 0 ? '<p class="text-gray-500 text-sm p-3">Belum ada tugas.</p>' : sc.tasks.map(task => {
-                        const proofButton = (task.status === 'completed' && task.photoUrl)
-                            ? `<button onclick="openProofDetailModal(${event.id}, ${committee.id}, ${sc.id}, ${task.id})" class="mt-2 text-sm text-blue-600 hover:underline">Lihat Bukti</button>`
-                            : '';
-                        return `<div class="border rounded-lg p-3 ${task.status === "completed" ? "bg-green-50" : "bg-white"}">
-                                    <p class="font-medium ${task.status === "completed" ? "line-through text-gray-500" : ""}">${task.name}</p>
-                                    <p class="text-sm text-red-500">Deadline: ${formatDate(task.deadline)}</p>
-                                    ${task.status === 'completed' ? `<p class="text-sm text-green-600 mt-1">✓ Selesai pada ${formatDate(task.completedDate)}</p>` : ''}
-                                    ${proofButton}
-                                </div>`;
+                        let taskHtml;
+                        switch(task.status) {
+                            case 'completed':
+                                taskHtml = `<div class="border rounded-lg p-3 bg-green-50">
+                                                <p class="font-medium line-through text-gray-500">${task.name}</p>
+                                                <p class="text-sm text-green-600 mt-1">✓ Selesai pada ${formatDate(task.completedDate)}</p>
+                                                <button onclick="openProofDetailModal(${event.id}, ${committee.id}, ${sc.id}, ${task.id})" class="mt-2 text-sm text-blue-600 hover:underline">Lihat Bukti</button>
+                                            </div>`;
+                                break;
+                            case 'pending-approval':
+                                taskHtml = `<div class="border rounded-lg p-3 bg-yellow-50">
+                                                <p class="font-medium text-yellow-800">${task.name}</p>
+                                                <p class="text-sm text-yellow-600 mt-1">Menunggu Persetujuan</p>
+                                                <div class="mt-2 pt-2 border-t flex space-x-2">
+                                                     <button onclick="openProofDetailModal(${event.id}, ${committee.id}, ${sc.id}, ${task.id})" class="text-sm text-blue-600 hover:underline flex-1 text-left">Lihat Bukti</button>
+                                                     <button onclick="rejectTask(${event.id}, ${committee.id}, ${sc.id}, ${task.id})" class="text-sm bg-red-200 text-red-800 px-2 py-1 rounded-md hover:bg-red-300">Tolak</button>
+                                                     <button onclick="approveTask(${event.id}, ${committee.id}, ${sc.id}, ${task.id})" class="text-sm bg-green-200 text-green-800 px-2 py-1 rounded-md hover:bg-green-300">Setujui</button>
+                                                </div>
+                                            </div>`;
+                                break;
+                            default: // 'in-progress'
+                                taskHtml = `<div class="border rounded-lg p-3 bg-white">
+                                                <p class="font-medium">${task.name}</p>
+                                                <p class="text-sm text-red-500">Deadline: ${formatDate(task.deadline)}</p>
+                                            </div>`;
+                                break;
+                        }
+                        return taskHtml;
                     }).join('');
                     return `<div class="border rounded-lg p-4 bg-gray-50 mb-4">
                                 <h4 class="font-bold text-gray-800 mb-2">${sc.name}</h4>
@@ -1360,7 +1410,29 @@
                 return;
             }
             const container = document.getElementById("mySubcommitteeTasksList");
-            container.innerHTML = subcommittee.tasks.length === 0 ? `<div class="text-center text-gray-500 p-4">Belum ada tugas.</div>` : subcommittee.tasks.map(task => `<div class="task-card border rounded-lg p-4 ${task.status === "completed" ? "bg-green-50" : "bg-white"}"><div class="flex items-center justify-between"><div><h4 class="font-semibold ${task.status === "completed" ? "line-through text-gray-500" : ""}">${task.name}</h4><p class="text-sm text-red-600 mt-1 countdown" data-deadline="${task.deadline}"></p></div>${task.status !== "completed" ? `<button onclick="completeTask(${task.id})" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">Selesaikan</button>` : `<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Selesai</span>`}</div></div>`).join('');
+            container.innerHTML = subcommittee.tasks.length === 0 ? `<div class="text-center text-gray-500 p-4">Belum ada tugas.</div>` : subcommittee.tasks.map(task => {
+                let statusHtml;
+                switch (task.status) {
+                    case 'completed':
+                        statusHtml = `<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Selesai</span>`;
+                        break;
+                    case 'pending-approval':
+                        statusHtml = `<span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">Menunggu Persetujuan</span>`;
+                        break;
+                    default: // 'in-progress'
+                        statusHtml = `<button onclick="completeTask(${task.id})" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">Selesaikan</button>`;
+                        break;
+                }
+                return `<div class="task-card border rounded-lg p-4 ${task.status === "completed" ? "bg-green-50" : "bg-white"}">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold ${task.status === "completed" ? "line-through text-gray-500" : ""}">${task.name}</h4>
+                                    <p class="text-sm text-red-600 mt-1 countdown" data-deadline="${task.deadline}"></p>
+                                </div>
+                                ${statusHtml}
+                            </div>
+                        </div>`;
+            }).join('');
             updateAllCountdowns();
         }
 
@@ -1374,15 +1446,42 @@
                 });
             }
             const container = document.getElementById("myTasksList");
-            container.innerHTML = myTasks.length === 0 ? `<div class="text-center text-gray-500 p-4">Anda tidak memiliki tugas di tim ini.</div>` : myTasks.map(task => `<div class="task-card border rounded-lg p-4 ${task.status === "completed" ? "bg-green-50" : "bg-white"}"><div class="flex items-center justify-between"><div><h4 class="font-semibold ${task.status === "completed" ? "line-through text-gray-500" : ""}">${task.name}</h4><p class="text-sm text-red-600 mt-1 countdown" data-deadline="${task.deadline}"></p></div>${task.status !== "completed" ? `<button onclick="completeTask(${task.id})" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">Selesaikan</button>` : `<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Selesai</span>`}</div></div>`).join('');
+            container.innerHTML = myTasks.length === 0 ? `<div class="text-center text-gray-500 p-4">Anda tidak memiliki tugas di tim ini.</div>` : myTasks.map(task => {
+                 let statusHtml;
+                switch (task.status) {
+                    case 'completed':
+                        statusHtml = `<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Selesai</span>`;
+                        break;
+                    case 'pending-approval':
+                        statusHtml = `<span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">Menunggu Persetujuan</span>`;
+                        break;
+                    default: // 'in-progress'
+                        statusHtml = `<button onclick="completeTask(${task.id})" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">Selesaikan</button>`;
+                        break;
+                }
+                 return `<div class="task-card border rounded-lg p-4 ${task.status === "completed" ? "bg-green-50" : "bg-white"}">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold ${task.status === "completed" ? "line-through text-gray-500" : ""}">${task.name}</h4>
+                                    <p class="text-sm text-red-600 mt-1 countdown" data-deadline="${task.deadline}"></p>
+                                </div>
+                                ${statusHtml}
+                            </div>
+                        </div>`;
+            }).join('');
             updateAllCountdowns();
         }
 
         // --- HELPERS & TIMERS ---
         function showNotification(text, type = "success") {
             const el = document.getElementById("notification");
+            const typeClasses = {
+                success: "bg-green-500",
+                error: "bg-red-500",
+                warning: "bg-yellow-500"
+            };
             el.querySelector('span').textContent = text;
-            el.className = `fixed top-4 right-4 text-white px-6 py-3 rounded-lg shadow-lg notification ${type === "error" ? "bg-red-500" : "bg-green-500"}`;
+            el.className = `fixed top-4 right-4 text-white px-6 py-3 rounded-lg shadow-lg notification ${typeClasses[type] || 'bg-gray-500'}`;
             el.classList.remove("hidden");
             setTimeout(() => el.classList.add("hidden"), 3000);
         }
