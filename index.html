@@ -207,6 +207,10 @@
                 <!-- Tampilan untuk Ketua Bidang -->
                 <div id="ketuaBidangView" class="hidden">
                     <div class="bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-100">
+                        <div class="mb-6 pb-4 border-b">
+                             <h3 class="text-lg font-semibold text-gray-900">Detail Peran Anda</h3>
+                             <p class="text-gray-600">Anda adalah Ketua Bidang untuk: <span id="mySubcommitteeName" class="font-bold text-purple-700"></span></p>
+                        </div>
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">📋 Daftar Tugas Bidang Anda</h3>
                         <div id="mySubcommitteeTasksList" class="space-y-4"></div>
                     </div>
@@ -1020,7 +1024,7 @@
                         for (const subcommittee of committee.subcommittees) {
                             const task = subcommittee.tasks.find(t => t.id === currentTaskId);
                             if (task) {
-                                task.status = "pending-approval"; // Changed from 'completed'
+                                task.status = "pending-approval";
                                 task.completedDate = new Date().toISOString().split("T")[0];
                                 task.photoUrl = `https://placehold.co/600x400/a8a29e/FFFFFF?text=Bukti+Tugas+${task.id}`; 
                                 task.photoDescription = description;
@@ -1102,6 +1106,10 @@
                 addSubcommitteeTaskRow();
             } else if (isSubcommitteeChair) {
                 document.getElementById("eventRoleInfo").innerHTML = `<span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">Ketua Bidang</span>`;
+                const mySubcommittee = committee.subcommittees.find(sc => sc.chair?.id === loggedInUser.id);
+                if (mySubcommittee) {
+                    document.getElementById("mySubcommitteeName").textContent = mySubcommittee.name;
+                }
                 renderMySubcommitteeTasks(event, committee);
             } else {
                 document.getElementById("eventRoleInfo").innerHTML = `<span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Anggota Bidang</span>`;
