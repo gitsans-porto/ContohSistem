@@ -211,6 +211,12 @@
                              <h3 class="text-lg font-semibold text-gray-900">Detail Peran Anda</h3>
                              <p class="text-gray-600">Anda adalah Ketua Bidang untuk: <span id="mySubcommitteeName" class="font-bold text-purple-700"></span></p>
                         </div>
+                        <div class="mb-6">
+                             <h3 class="text-lg font-semibold text-gray-900 mb-2">Anggota Bidang Anda</h3>
+                             <div id="mySubcommitteeMembersList" class="space-y-2">
+                                <!-- Member list will be injected here -->
+                             </div>
+                        </div>
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">📋 Daftar Tugas Bidang Anda</h3>
                         <div id="mySubcommitteeTasksList" class="space-y-4"></div>
                     </div>
@@ -1109,6 +1115,14 @@
                 const mySubcommittee = committee.subcommittees.find(sc => sc.chair?.id === loggedInUser.id);
                 if (mySubcommittee) {
                     document.getElementById("mySubcommitteeName").textContent = mySubcommittee.name;
+                    const membersListContainer = document.getElementById("mySubcommitteeMembersList");
+                    if (mySubcommittee.members && mySubcommittee.members.length > 0) {
+                        membersListContainer.innerHTML = mySubcommittee.members.map(member => 
+                            `<div class="bg-gray-100 p-2 rounded-md text-gray-800">${member.name}</div>`
+                        ).join('');
+                    } else {
+                        membersListContainer.innerHTML = `<p class="text-gray-500 text-sm">Belum ada anggota di bidang ini.</p>`;
+                    }
                 }
                 renderMySubcommitteeTasks(event, committee);
             } else {
