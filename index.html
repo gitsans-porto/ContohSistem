@@ -186,15 +186,11 @@
                                     <option value="">Pilih Bidang</option>
                                 </select>
                             </div>
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Nama Tugas</label>
-                                <input type="text" id="taskNameForSubcommittee" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                             <div id="subcommitteeTasksContainer" class="space-y-3 mb-4">
+                                <!-- Task rows will be injected here by JS -->
                             </div>
-                            <div class="mb-4">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Deadline</label>
-                                <input type="date" id="taskDeadlineForSubcommittee" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all">Buat Tugas</button>
+                            <button type="button" onclick="addSubcommitteeTaskRow()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition mb-4">+ Tambah Tugas</button>
+                            <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-all">Buat Semua Tugas</button>
                         </form>
                     </div>
 
@@ -1072,6 +1068,8 @@
                 renderAssignedSubcommittees(event, committee);
                 const taskSubcommitteeSelect = document.getElementById('taskSubcommittee');
                 taskSubcommitteeSelect.innerHTML = '<option value="">Pilih Bidang</option>' + (committee.subcommittees || []).map(sc => `<option value="${sc.id}">${sc.name}</option>`).join('');
+                document.getElementById('subcommitteeTasksContainer').innerHTML = '';
+                addSubcommitteeTaskRow();
             } else if (isSubcommitteeChair) {
                 document.getElementById("eventRoleInfo").innerHTML = `<span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">Ketua Bidang</span>`;
                 renderMySubcommitteeTasks(event, committee);
@@ -1085,7 +1083,7 @@
             batchFormCounter = 0;
             const container = document.getElementById('subcommitteeFormsContainer');
             container.innerHTML = '';
-            addBatchSubcommitteeForm(); // Add the first form automatically
+            addBatchSubcommitteeForm();
             document.getElementById('subcommitteeBatchModal').classList.remove('hidden');
             document.getElementById('subcommitteeBatchModal').classList.add('flex');
         }
@@ -1127,7 +1125,6 @@
                 </div>`;
             container.insertAdjacentHTML('beforeend', formHtml);
             
-            // Setup interactive inputs for the new form
             setupBatchChairInput(batchFormCounter);
             setupBatchMembersInput(batchFormCounter);
         }
@@ -1264,25 +1261,73 @@
             updateAllPimpinanDashboards();
             showNotification(`${newSubcommittees.length} bidang baru berhasil dibuat!`, "success");
         }
+        
+        function addSubcommitteeTaskRow() {
+            const container = document.getElementById('subcommitteeTasksContainer');
+            const taskRow = document.createElement('div');
+            taskRow.className = 'flex items-center space-x-2 task-row-for-subcommittee';
+            taskRow.innerHTML = `
+                <input type="text" class="task-name-input flex-grow border border-gray-300 rounded-lg px-3 py-2" placeholder="Nama Tugas" required>
+                <input type="date" class="task-deadline-input border border-gray-300 rounded-lg px-3 py-2" required>
+                <button type="button" onclick="this.parentElement.remove()" class="bg-red-100 text-red-600 p-2 rounded-lg hover:bg-red-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            `;
+            container.appendChild(taskRow);
+        }
 
         function assignTaskToSubcommittee(e) {
             e.preventDefault();
             const subcommitteeId = document.getElementById('taskSubcommittee').value;
-            const taskName = document.getElementById('taskNameForSubcommittee').value;
-            const deadline = document.getElementById('taskDeadlineForSubcommittee').value;
-            if (!subcommitteeId || !taskName || !deadline) return showNotification("Semua field wajib diisi.", "error");
+            if (!subcommitteeId) return showNotification("Silakan pilih bidang terlebih dahulu.", "error");
+
+            const taskRows = document.querySelectorAll('.task-row-for-subcommittee');
+            const newTasks = [];
+            let allValid = true;
+
+            taskRows.forEach(row => {
+                const taskName = row.querySelector('.task-name-input').value;
+                const deadline = row.querySelector('.task-deadline-input').value;
+                if (taskName && deadline) {
+                    newTasks.push({ name: taskName, deadline: deadline });
+                } else if (taskName || deadline) { 
+                    allValid = false;
+                }
+            });
+
+            if (!allValid) {
+                return showNotification("Setiap baris tugas harus memiliki nama dan deadline.", "error");
+            }
+            if (newTasks.length === 0) {
+                return showNotification("Tambahkan setidaknya satu tugas yang valid.", "error");
+            }
             
             const event = events.find(e => e.id === currentEventId);
             const committee = event.committees.find(c => c.id === currentCommitteeId);
             const subcommittee = committee.subcommittees.find(sc => sc.id == subcommitteeId);
             
-            const newTaskId = (committee.subcommittees.flatMap(sc => sc.tasks).reduce((max, t) => Math.max(max, t.id), 0)) + 1;
-            subcommittee.tasks.push({ id: newTaskId, name: taskName, status: 'in-progress', assignedDate: new Date().toISOString().split("T")[0], deadline, photoUrl: null, completedDate: null });
+            let lastTaskId = (committee.subcommittees.flatMap(sc => sc.tasks).reduce((max, t) => Math.max(max, t.id), 0));
             
+            newTasks.forEach(task => {
+                lastTaskId++;
+                subcommittee.tasks.push({ 
+                    id: lastTaskId, 
+                    name: task.name, 
+                    status: 'in-progress', 
+                    assignedDate: new Date().toISOString().split("T")[0], 
+                    deadline: task.deadline, 
+                    photoUrl: null, 
+                    completedDate: null 
+                });
+            });
+
             document.getElementById('assignTaskToSubcommitteeForm').reset();
+            document.getElementById('subcommitteeTasksContainer').innerHTML = '';
+            addSubcommitteeTaskRow();
+
             renderAssignedSubcommittees(event, committee);
             updateAllPimpinanDashboards();
-            showNotification("Tugas berhasil dibuat!", "success");
+            showNotification(`${newTasks.length} tugas berhasil dibuat untuk bidang ${subcommittee.name}!`, 'success');
         }
 
         function renderAssignedSubcommittees(event, committee) {
