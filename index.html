@@ -1131,6 +1131,36 @@
             }
         }
 
+        function getUnavailableMemberIds(excludeCounter = -1) {
+            const event = events.find(e => e.id === currentEventId);
+            const committee = event.committees.find(c => c.id === currentCommitteeId);
+            const unavailableIds = new Set();
+
+            // 1. Get members from already saved subcommittees
+            if (committee && committee.subcommittees) {
+                committee.subcommittees.forEach(sc => {
+                    if (sc.chair) unavailableIds.add(sc.chair.id);
+                    sc.members.forEach(m => unavailableIds.add(m.id));
+                });
+            }
+
+            // 2. Get members from other forms in the current modal session
+            const allForms = document.querySelectorAll('.subcommittee-batch-form');
+            allForms.forEach(form => {
+                const counter = parseInt(form.id.split('-').pop());
+                if (counter === excludeCounter) return;
+
+                const chairId = parseInt(form.querySelector('.batch-sc-chair-id').value);
+                if (chairId) unavailableIds.add(chairId);
+
+                const memberTags = form.querySelectorAll('[id^="batch-members-container"] .tag');
+                memberTags.forEach(tag => {
+                    unavailableIds.add(parseInt(tag.dataset.id));
+                });
+            });
+            return Array.from(unavailableIds);
+        }
+        
         function openBatchSubcommitteeModal() {
             batchFormCounter = 0;
             const container = document.getElementById('subcommitteeFormsContainer');
@@ -1204,9 +1234,11 @@
             const event = events.find(e => e.id === currentEventId);
             const committee = event.committees.find(c => c.id === currentCommitteeId);
             const availableMembers = committee.members || [];
+            const unavailableIds = getUnavailableMemberIds(counter);
             
             const dropdown = document.getElementById(`batch-chair-dropdown-${counter}`);
             const filteredMembers = availableMembers.filter(m => 
+                !unavailableIds.includes(m.id) &&
                 m.name.toLowerCase().includes(searchTerm.toLowerCase())
             );
             
@@ -1232,16 +1264,15 @@
             const event = events.find(e => e.id === currentEventId);
             const committee = event.committees.find(c => c.id === currentCommitteeId);
             const availableMembers = committee.members || [];
+            const unavailableIds = getUnavailableMemberIds(counter);
             
             const form = document.getElementById(`batch-form-${counter}`);
             const chairId = form.querySelector('.batch-sc-chair-id').value;
-            const selectedMemberTags = form.querySelectorAll(`#batch-members-container-${counter} .tag`);
-            const selectedMemberIds = Array.from(selectedMemberTags).map(tag => parseInt(tag.dataset.id));
 
             const dropdown = document.getElementById(`batch-members-dropdown-${counter}`);
             const filteredMembers = availableMembers.filter(m => 
                 m.id != chairId &&
-                !selectedMemberIds.includes(m.id) &&
+                !unavailableIds.includes(m.id) &&
                 m.name.toLowerCase().includes(searchTerm.toLowerCase())
             );
             
@@ -1298,7 +1329,7 @@
             if (!committee.subcommittees) committee.subcommittees = [];
 
             newSubcommittees.forEach(scData => {
-                 const newId = committee.subcommittees.reduce((max, sc) => Math.max(max, sc.id), 0) + 1;
+                 const newId = (committee.subcommittees.length > 0 ? Math.max(...committee.subcommittees.map(sc => sc.id)) : 0) + 1;
                  committee.subcommittees.push({
                      id: newId,
                      name: scData.name,
